@@ -1,25 +1,42 @@
 using System;
 using BaseAPI.Entities;
+using BaseAPI.Exceptions;
 using BaseAPI.Models;
 using Microsoft.AspNetCore.Mvc;
 
 namespace BaseAPI.Controllers
 {
-    public abstract class AbstractController<K> : ControllerBase where K : AbstractModel
+    public abstract class AbstractController<K, V> : ControllerBase where K : AbstractModel where V : AbstractEntity
     {
-        protected abstract AbstractService<K, AbstractEntity> getService();
+        protected abstract AbstractService<K, V> getService();
 
         protected IActionResult add(K model)
         {
-            model.scrubAndValidate(RequiredModelAttribute.RequiredActionEnum.CREATE);
-            Guid id = getService().add(model);
+            try
+            {
+                model.scrubAndValidate(RequiredModelAttribute.RequiredActionEnum.CREATE);
+            }
+            catch (InvalidModelException ime)
+            {
+                return BadRequest(ime.Message);
+            }
+
+            Guid? id = getService().add(model);
 
             return Created(new Uri($"{Request.Path}/{id}", UriKind.Relative), id);
         }
 
         protected IActionResult update(K model, string id)
         {
-            model.scrubAndValidate(RequiredModelAttribute.RequiredActionEnum.UPDATE);
+            try
+            {
+                model.scrubAndValidate(RequiredModelAttribute.RequiredActionEnum.UPDATE);
+            }
+            catch (InvalidModelException ime)
+            {
+                return BadRequest(ime.Message);
+            }
+
             getService().update(model, id);
 
             return Ok();

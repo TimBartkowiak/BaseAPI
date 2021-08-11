@@ -1,3 +1,4 @@
+using BaseAPI.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace BaseAPI.Database
@@ -11,5 +12,7 @@ namespace BaseAPI.Database
         {
             optionsBuilder.EnableSensitiveDataLogging().UseLazyLoadingProxies();
         }
+        
+        public DbSet<TestEntity> Tests { get; set; }
     }
 }

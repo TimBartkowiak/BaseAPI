@@ -1,4 +1,5 @@
 using System;
+using BaseAPI.Database;
 using BaseAPI.Entities;
 using BaseAPI.Models;
 using BaseAPI.Utils;
@@ -8,6 +9,12 @@ namespace BaseAPI
     public abstract class AbstractService<K, V> where K : AbstractModel where V : AbstractEntity
     {
         private readonly string STATUS = "status";
+        private readonly BaseDbContext _dbContext;
+
+        protected AbstractService(BaseDbContext baseDbContext)
+        {
+            this._dbContext = baseDbContext;
+        }
 
         public enum Actions
         {
@@ -22,7 +29,7 @@ namespace BaseAPI
        * @return - The primary key of the new record
        * @throws InrangeException - Thrown if the model is invalid
        */
-        public Guid add(K model)
+        public Guid? add(K model)
         {
             preAddCheck(model);
             V entity = convertToEntityForAdd(model);
@@ -30,7 +37,8 @@ namespace BaseAPI
             entity.DateCreated = DateTimeOffset.Now;
             entity.DateModified = DateTimeOffset.Now;
 
-            //TODO: db save
+            _dbContext.Add(entity);
+            _dbContext.SaveChanges();
 
             postSaveProcessing(entity, model, Actions.CREATE);
             addAuditData(null, entity, Actions.CREATE);
@@ -103,7 +111,7 @@ namespace BaseAPI
             entity = populateEntityForUpdate(entity, model);
             entity.DateModified = DateTimeOffset.Now;
 
-            //TODO: Save entity
+            _dbContext.SaveChanges();
 
             postSaveProcessing(entity, model, Actions.UPDATE);
             addAuditData(beforeEntity, entity, Actions.UPDATE);
@@ -129,7 +137,7 @@ namespace BaseAPI
      */
         protected V getById(Guid id)
         {
-            
+            return _dbContext.Find<V>(id);
         }
 
         /* =====================================================

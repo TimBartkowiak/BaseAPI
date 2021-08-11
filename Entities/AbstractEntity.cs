@@ -9,8 +9,7 @@ namespace BaseAPI.Entities
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         [Key]
         [Column("id")]
-        [Required]
-        public Guid Id { get; set; }
+        public Guid? Id { get; set; }
 
         [Column("datecreated")]
         [Required]

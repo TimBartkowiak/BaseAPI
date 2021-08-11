@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
+using System.Net.Http;
 using System.Reflection;
 using System.Text.RegularExpressions;
 using BaseAPI.Exceptions;
@@ -12,6 +14,11 @@ namespace BaseAPI.Models
     {
         protected string Id { get; set; }
 
+        public string getId()
+        {
+            return Id;
+        }
+
         protected void additionalValidation()
         {
             //override for additional validation
@@ -19,31 +26,31 @@ namespace BaseAPI.Models
 
         public void scrubAndValidate(RequiredModelAttribute.RequiredActionEnum requiredActionEnum)
         {
-            FieldInfo[] allFields = this.GetType().GetFields();
+            PropertyInfo[] allProperties = this.GetType().GetProperties();
             
-            scrub(allFields);
-            validate(allFields, requiredActionEnum);
+            scrub(allProperties);
+            validate(allProperties, requiredActionEnum);
         }
 
         /**
      * Trims all of the white space from the front and back of a string input.  We can also add other scrubbing here if needs be.
      * @param allFields - The fields to loop through and scrub
      */
-        private void scrub(FieldInfo[] allFields)
+        private void scrub(PropertyInfo[] allProperties)
         {
-            foreach (FieldInfo field in allFields)
+            foreach (PropertyInfo property in allProperties)
             {
                 try
                 {
                     // See if we have a getter and try to call it, if either of these fail it's ok to move onto the next since we can't get the value
-                    if (field.FieldType == typeof(string))
+                    if (property.PropertyType == typeof(string))
                     {
-                        string fieldValue = (string)field.GetValue(this);
-                        if (fieldValue != null)
+                        string propertyValue = (string)property.GetValue(this);
+                        if (propertyValue != null)
                         {
-                            fieldValue = fieldValue.Trim();
+                            propertyValue = propertyValue.Trim();
 
-                            field.SetValue(this, fieldValue);
+                            property.SetValue(this, propertyValue);
                         }
                     }
                 }
@@ -60,40 +67,40 @@ namespace BaseAPI.Models
      * @param requiredActionEnum - The action we are performing this validation for
      * @throws InvalidModelException - Thrown if one of the validations isn't met.
      */
-        private void validate(FieldInfo[] allFields, RequiredModelAttribute.RequiredActionEnum requiredActionEnum)
+        private void validate(PropertyInfo[] allProperties, RequiredModelAttribute.RequiredActionEnum requiredActionEnum)
         {
-            foreach (FieldInfo field in allFields)
+            foreach (PropertyInfo property in allProperties)
             {
                 try
                 {
-                    object fieldValue = field.GetValue(this);
+                    object propertyValue = property.GetValue(this);
                     
-                    RequiredModelAttribute requiredAttribute = field.GetCustomAttribute<RequiredModelAttribute>(true);
+                    RequiredModelAttribute requiredAttribute = property.GetCustomAttribute<RequiredModelAttribute>(true);
                     if (requiredAttribute != null)
                     {
                         RequiredModelAttribute.RequiredActionEnum fieldEnum = requiredAttribute.Type;
 
                         if (fieldEnum == RequiredModelAttribute.RequiredActionEnum.BOTH || requiredActionEnum == fieldEnum)
                         {
-                            if (fieldValue == null)
+                            if (propertyValue == null)
                             {
-                                throw new InvalidModelException("The field " + field.Name + " is required and a value has not been provided.");
+                                throw new InvalidModelException("The field " + property.Name + " is required and a value has not been provided.");
                             } 
-                            else if (field.FieldType == typeof(string) && string.IsNullOrEmpty((string) fieldValue))
+                            else if (property.PropertyType == typeof(string) && string.IsNullOrEmpty((string) propertyValue))
                             {
-                                throw new InvalidModelException("The field " + field.Name + " is required and a value has not been provided");
+                                throw new InvalidModelException("The field " + property.Name + " is required and a value has not been provided");
                             }
                         }
                     }
 
-                    if (fieldValue != null)
+                    if (propertyValue != null)
                     {
-                        PatternAttribute patternAttribute = field.GetCustomAttribute<PatternAttribute>(true);
+                        PatternAttribute patternAttribute = property.GetCustomAttribute<PatternAttribute>(true);
                         if (patternAttribute != null)
                         {
-                            if (field.FieldType == typeof(string))
+                            if (property.PropertyType == typeof(string))
                             {
-                                string value = (string)fieldValue;
+                                string value = (string)propertyValue;
 
                                 if (!string.IsNullOrEmpty(value))
                                 {
@@ -101,55 +108,55 @@ namespace BaseAPI.Models
 
                                     if (!regex.IsMatch(value))
                                     {
-                                        throw new InvalidModelException("The field " + field.Name + " doesn't match the pattern " + regex);
+                                        throw new InvalidModelException("The field " + property.Name + " doesn't match the pattern " + regex);
                                     }
                                 }
                             }
                         }
 
                         // Check that all of the length fields are greater than or equal to their lengths
-                        LengthAttribute lengthAttribute = field.GetCustomAttribute<LengthAttribute>(true);
+                        LengthAttribute lengthAttribute = property.GetCustomAttribute<LengthAttribute>(true);
                         if (lengthAttribute != null)
                         {
-                            if (field.FieldType == typeof(string))
+                            if (property.PropertyType == typeof(string))
                             {
                                 int length = lengthAttribute.Length;
-                                string value = (string)fieldValue;
+                                string value = (string)propertyValue;
 
                                 if (value.Length < length)
                                 {
-                                    throw new InvalidModelException("The field " + field.Name + " isn't long enough.  It must have " + length + " characters.  It has: " + value.Length + " characters");
+                                    throw new InvalidModelException("The field " + property.Name + " isn't long enough.  It must have " + length + " characters.  It has: " + value.Length + " characters");
                                 }
                             }
                         }
 
                         // Verify the max length fields
-                        MaxLengthAttribute maxLengthAttribute = field.GetCustomAttribute<MaxLengthAttribute>(true);
+                        MaxLengthAttribute maxLengthAttribute = property.GetCustomAttribute<MaxLengthAttribute>(true);
                         if (maxLengthAttribute != null)
                         {
-                            if (field.FieldType == typeof(string))
+                            if (property.PropertyType == typeof(string))
                             {
                                 int maxLength = maxLengthAttribute.Maxlength;
-                                string value = (string)fieldValue;
+                                string value = (string)propertyValue;
 
                                 if (value.Length > maxLength)
                                 {
-                                    throw new InvalidModelException("The field " + field.Name + " is too long.  It can only be " + maxLength + " characters long.  It is: " + value.Length);
+                                    throw new InvalidModelException("The field " + property.Name + " is too long.  It can only be " + maxLength + " characters long.  It is: " + value.Length);
                                 }
                             }
                         }
 
                         // Check to see if the accepted values fields have values that are expected
                         AcceptedValuesAttribute acceptedValuesAttribute =
-                            field.GetCustomAttribute<AcceptedValuesAttribute>(true);
+                            property.GetCustomAttribute<AcceptedValuesAttribute>(true);
                         if (acceptedValuesAttribute != null)
                         {
-                            if (field.FieldType == typeof(string))
+                            if (property.PropertyType == typeof(string))
                             {
                                 Type enumType = acceptedValuesAttribute.EnumType;
                                 string[] acceptedValues = acceptedValuesAttribute.Values;
 
-                                string value = (string)fieldValue;
+                                string value = (string)propertyValue;
 
                                 if (!string.IsNullOrEmpty(value))
                                 {
@@ -159,7 +166,7 @@ namespace BaseAPI.Models
 
                                         if (!acceptedValuesList.Contains(value))
                                         {
-                                            throw new InvalidModelException("The value provided for field " + field.Name + " '" + value + "' isn't an accepted value for that field.  Accepted values are: " + string.Join(", ", acceptedValuesList));
+                                            throw new InvalidModelException("The value provided for field " + property.Name + " '" + value + "' isn't an accepted value for that field.  Accepted values are: " + string.Join(", ", acceptedValuesList));
                                         }
                                     }
                                     else
@@ -171,7 +178,7 @@ namespace BaseAPI.Models
 
                                             if (!enumConstants.Contains(value))
                                             {
-                                                throw new InvalidModelException("The value provided for field " + field.Name + " '" + value + "' isn't an accepted value for that field.  Accepted values are: " + string.Join(", ", enumConstants));
+                                                throw new InvalidModelException("The value provided for field " + property.Name + " '" + value + "' isn't an accepted value for that field.  Accepted values are: " + string.Join(", ", enumConstants));
                                             }
                                         }
                                     }
@@ -183,7 +190,10 @@ namespace BaseAPI.Models
                 }
                 catch (Exception e)
                 {
-                    //ignore
+                    if (e.GetType() == typeof(InvalidModelException))
+                    {
+                        throw;
+                    }
                 }
             }
         }

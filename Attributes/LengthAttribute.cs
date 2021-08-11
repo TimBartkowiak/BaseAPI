@@ -1,6 +1,6 @@
 namespace BaseAPI
 {
-    [System.AttributeUsage(System.AttributeTargets.Class | System.AttributeTargets.Struct)]
+    [System.AttributeUsage(System.AttributeTargets.Property)]
 
     public class LengthAttribute : System.Attribute
     {
