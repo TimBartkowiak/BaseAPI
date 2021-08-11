@@ -1,8 +1,11 @@
 using System;
+using System.Linq;
+using System.Linq.Expressions;
 using BaseAPI.Database;
 using BaseAPI.Entities;
 using BaseAPI.Models;
 using BaseAPI.Utils;
+using Microsoft.EntityFrameworkCore;
 
 namespace BaseAPI
 {
@@ -69,32 +72,10 @@ namespace BaseAPI
             return convertToModel(entity);
         }
 
-        /**
-     * Queries the database for records like the model sent in with the pagination information sent in
-     * @param model - The example to query for
-     * @param pageable - The pagination data
-     * @return - The list of results with the pagination data
-     */
-        // public Page<K> getRecordsLikeThis(K model, Pageable pageable) {
-        //     V entity = convertToEntityForSearch(model);
-        //     return getRecordsLikeThis(entity, pageable);
-        // } //TODO: also figure this shiz out
-
         /* =====================================================
      * Helper methods that can be overriden
      * =====================================================
      */
-
-        /**
-         * Takes a list of entities and returns a list of models
-         * @param pageEntities - The list of entities
-         * @param pageable - The pagination information
-         * @return - The paginated list of models
-         */
-        // protected Page<K> convertToModel(Page<V> pageEntities, Pageable pageable) {
-        //     List<K> models = pageEntities.getContent().stream().map(this::convertToModelForList).collect(Collectors.toList());
-        //     return new PageImpl<>(models, pageable, pageEntities.getTotalElements());
-        // } //TODO: figure this shiz out
 
         /**
      * Updates the database entry with the given id with the data in the model provided
@@ -139,6 +120,25 @@ namespace BaseAPI
         {
             return _dbContext.Find<V>(id);
         }
+
+        protected Paged<K> GetByPage(int limit, int page, Expression<Func<V, bool>> wherePredicate = null, Expression<Func<V, object>> orderPredicate = null)
+        {
+            Paged<V> entities = _dbContext.Set<V>()
+                .AsNoTracking()
+                .OrderBy(orderPredicate ?? (entity => entity.DateCreated))
+                .Where(wherePredicate ?? (entity => true))
+                .Paginate(page, limit);
+
+            return new Paged<K>()
+            {
+                CurrentPage = entities.CurrentPage,
+                PageSize = entities.PageSize,
+                TotalItems = entities.TotalItems,
+                TotalPages = entities.TotalPages,
+                Items = entities.Items.Select(convertToModelForList).ToList()
+            };
+        }
+
 
         /* =====================================================
          * Methods to be overriden if needed

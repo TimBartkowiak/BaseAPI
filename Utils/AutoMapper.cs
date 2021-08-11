@@ -10,9 +10,11 @@ namespace BaseAPI.Utils
         {
             //Model -> Entity
             CreateMap<TestModel, TestEntity>();
+            CreateMap<UserModel, UserEntity>();
             
             //Entity -> Model
             CreateMap<TestEntity, TestModel>();
+            CreateMap<UserEntity, UserModel>();
         }
     }
 }

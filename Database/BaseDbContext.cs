@@ -14,5 +14,6 @@ namespace BaseAPI.Database
         }
         
         public DbSet<TestEntity> Tests { get; set; }
+        public DbSet<UserEntity> Users { get; set; }
     }
 }

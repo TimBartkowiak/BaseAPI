@@ -20,7 +20,7 @@ namespace BaseAPI.Controllers
             return _testService;
         }
 
-        // GET: api/Test/5
+        // GET: api/Test/{id}
         [HttpGet("{id}", Name = "Get")]
         public TestModel Get(string id)
         {
@@ -34,7 +34,7 @@ namespace BaseAPI.Controllers
             return add(model);
         }
 
-        // PUT: api/Test/5
+        // PUT: api/Test/{id}
         [HttpPut("{id}")]
         public IActionResult Put(string id, [FromBody] TestModel model)
         {
