@@ -1,13 +1,15 @@
 using System.Collections.Generic;
 using BaseAPI.Entities;
+using BaseAPI.Exceptions;
 using BaseAPI.Models;
+using BaseAPI.Utils;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace BaseAPI.Controllers
 {
     [Authorize]
-    [Microsoft.AspNetCore.Components.Route("api/[controller]")]
+    [Route("[controller]")]
     [ApiController]
     public class UserController : AbstractController<UserModel, UserEntity>
     {
@@ -25,7 +27,7 @@ namespace BaseAPI.Controllers
             return _userService;
         }
 
-        [HttpGet]
+        [HttpGet("")]
         public List<UserModel> AllUsers()
         {
             return _userService.getAll();
@@ -38,11 +40,33 @@ namespace BaseAPI.Controllers
         }
 
         [AllowAnonymous]
-        [HttpPost("authentication")]
+        [HttpPost("login")]
         public IActionResult Login()
         {
-            string token = _authenticationService.login(Request.Headers["Authorization"]);
-            return token != null ? Ok(token) : Unauthorized();
+            try
+            {
+                string token = _authenticationService.login(Request.Headers["Authorization"]);
+                return token != null ? Ok(token) : Unauthorized();
+            }
+            catch (UnAuthorizedException ae)
+            {
+                return new ForbiddenResult(ae.Message);
+            }
+        }
+
+        [AllowAnonymous]
+        [HttpPost("register")]
+        public IActionResult Register()
+        {
+            try
+            {
+                string token = _authenticationService.register(Request.Headers["Authorization"]);
+                return token != null ? Ok(token) : Unauthorized();
+            }
+            catch (UnAuthorizedException ae)
+            {
+                return new ForbiddenResult(ae.Message);
+            }
         }
     }
 }

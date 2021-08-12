@@ -21,7 +21,7 @@ namespace BaseAPI
 
         public List<UserModel> getAll()
         {
-            return _dbContext.Set<UserModel>().AsNoTracking().ToList();
+            return _dbContext.Set<UserEntity>().AsNoTracking().AsEnumerable().Select(convertToModelForList).ToList();
         }
 
         protected override UserEntity convertToEntityForAdd(UserModel model)

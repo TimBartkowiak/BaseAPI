@@ -9,11 +9,9 @@ namespace BaseAPI.Utils
         public AutoMapper()
         {
             //Model -> Entity
-            CreateMap<TestModel, TestEntity>();
             CreateMap<UserModel, UserEntity>();
             
             //Entity -> Model
-            CreateMap<TestEntity, TestModel>();
             CreateMap<UserEntity, UserModel>();
         }
     }

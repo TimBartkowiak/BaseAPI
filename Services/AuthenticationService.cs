@@ -1,12 +1,12 @@
 using System;
 using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
-using System.Security.Authentication;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
 using BaseAPI.Database;
 using BaseAPI.Entities;
+using BaseAPI.Exceptions;
 using BaseAPI.Models;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
@@ -36,12 +36,12 @@ namespace BaseAPI
             UserEntity userEntity = _dbContext.Users.FirstOrDefault(entity => entity.Username == username);
             if (userEntity == null)
             {
-                throw new AuthenticationException();
+                throw new UnAuthorizedException();
             }
 
             if (hashPassword(password, userEntity.Salt) != userEntity.Password)
             {
-                throw new AuthenticationException();
+                throw new UnAuthorizedException();
             }
 
             return generateToken(username);
@@ -57,6 +57,12 @@ namespace BaseAPI
             string newSalt = generateSalt();
             string hashedPassword = hashPassword(password, newSalt);
 
+            UserEntity userEntity = _dbContext.Users.FirstOrDefault(entity => entity.Username == username);
+            if (userEntity != null)
+            {
+                throw new UnAuthorizedException("Username already taken");
+            }
+            
             _userService.add(new UserModel
             {
                 Username = username,
@@ -104,19 +110,20 @@ namespace BaseAPI
         
         private string[] decodeAuth(string encodedAuth)
         {
-            string decodedAuth = Encoding.UTF8.GetString(Convert.FromBase64String(encodedAuth));
+            // Basic user:pass
+            string decodedAuth = Encoding.UTF8.GetString(Convert.FromBase64String(encodedAuth.Split(" ")[1]));
             string[] authParts = decodedAuth.Split(":");
 
             if (authParts.Length < 2)
             {
-                throw new AuthenticationException();
+                throw new UnAuthorizedException();
             }
 
             foreach (string part in authParts)
             {
                 if (string.IsNullOrEmpty(part))
                 {
-                    throw new AuthenticationException();
+                    throw new UnAuthorizedException();
                 }
             }
 

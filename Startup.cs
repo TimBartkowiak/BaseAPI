@@ -25,7 +25,7 @@ namespace BaseAPI
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddDbContext<BaseDbContext>(options => options.UseNpgsql(Configuration["DB_CONNECTION"]));
+            services.AddDbContext<BaseDbContext>(options => options.UseSqlServer(Configuration["DB_CONNECTION"]));
             services.AddHttpContextAccessor();
             services.AddCors();
             services.AddControllers();
@@ -52,9 +52,8 @@ namespace BaseAPI
 
             services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 
-            services.AddSingleton<TestService>();
-            services.AddSingleton<UserService>();
-            services.AddSingleton<AuthenticationService>();
+            services.AddScoped<UserService>();
+            services.AddScoped<AuthenticationService>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
