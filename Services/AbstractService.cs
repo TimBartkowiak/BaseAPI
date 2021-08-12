@@ -1,10 +1,12 @@
 using System;
+using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
 using System.Linq.Expressions;
 using BaseAPI.Database;
 using BaseAPI.Entities;
 using BaseAPI.Models;
 using BaseAPI.Utils;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 
 namespace BaseAPI
@@ -12,11 +14,13 @@ namespace BaseAPI
     public abstract class AbstractService<K, V> where K : AbstractModel where V : AbstractEntity
     {
         private readonly string STATUS = "status";
-        private readonly BaseDbContext _dbContext;
+        protected readonly BaseDbContext dbContext;
+        protected readonly IHttpContextAccessor httpContext;
 
-        protected AbstractService(BaseDbContext baseDbContext)
+        protected AbstractService(BaseDbContext baseDbContext, IHttpContextAccessor httpContext)
         {
-            this._dbContext = baseDbContext;
+            dbContext = baseDbContext;
+            this.httpContext = httpContext;
         }
 
         public enum Actions
@@ -24,6 +28,11 @@ namespace BaseAPI
             CREATE,
             UPDATE,
             DELETE
+        }
+
+        protected JwtSecurityToken getToken()
+        {
+            return new JwtSecurityTokenHandler().ReadJwtToken(((string) httpContext.HttpContext.Request.Headers["authorization"]).Split(" ")[1]);
         }
 
         /**
@@ -40,8 +49,8 @@ namespace BaseAPI
             entity.DateCreated = DateTimeOffset.Now;
             entity.DateModified = DateTimeOffset.Now;
 
-            _dbContext.Add(entity);
-            _dbContext.SaveChanges();
+            dbContext.Add(entity);
+            dbContext.SaveChanges();
 
             postSaveProcessing(entity, model, Actions.CREATE);
             addAuditData(null, entity, Actions.CREATE);
@@ -92,7 +101,7 @@ namespace BaseAPI
             entity = populateEntityForUpdate(entity, model);
             entity.DateModified = DateTimeOffset.Now;
 
-            _dbContext.SaveChanges();
+            dbContext.SaveChanges();
 
             postSaveProcessing(entity, model, Actions.UPDATE);
             addAuditData(beforeEntity, entity, Actions.UPDATE);
@@ -118,12 +127,12 @@ namespace BaseAPI
      */
         protected V getById(Guid id)
         {
-            return _dbContext.Find<V>(id);
+            return dbContext.Find<V>(id);
         }
 
         protected Paged<K> GetByPage(int limit, int page, Expression<Func<V, bool>> wherePredicate = null, Expression<Func<V, object>> orderPredicate = null)
         {
-            Paged<V> entities = _dbContext.Set<V>()
+            Paged<V> entities = dbContext.Set<V>()
                 .AsNoTracking()
                 .OrderBy(orderPredicate ?? (entity => entity.DateCreated))
                 .Where(wherePredicate ?? (entity => true))

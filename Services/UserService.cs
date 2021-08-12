@@ -4,6 +4,7 @@ using AutoMapper;
 using BaseAPI.Database;
 using BaseAPI.Entities;
 using BaseAPI.Models;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 
 namespace BaseAPI
@@ -11,17 +12,15 @@ namespace BaseAPI
     public class UserService : AbstractService<UserModel, UserEntity>
     {
         private readonly IMapper _autoMapper;
-        private readonly BaseDbContext _dbContext;
 
-        public UserService(BaseDbContext baseDbContext, IMapper autoMapper) : base(baseDbContext)
+        public UserService(BaseDbContext baseDbContext, IHttpContextAccessor httpContext, IMapper autoMapper) : base(baseDbContext, httpContext)
         {
             _autoMapper = autoMapper;
-            _dbContext = baseDbContext;
         }
 
         public List<UserModel> getAll()
         {
-            return _dbContext.Set<UserEntity>().AsNoTracking().AsEnumerable().Select(convertToModelForList).ToList();
+            return dbContext.Set<UserEntity>().AsNoTracking().AsEnumerable().Select(convertToModelForList).ToList();
         }
 
         protected override UserEntity convertToEntityForAdd(UserModel model)
