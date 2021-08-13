@@ -8,7 +8,7 @@ using BaseAPI.Models;
 using BaseAPI.Utils;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
-
+ 
 namespace BaseAPI
 {
     public abstract class AbstractService<K, V> where K : AbstractModel where V : AbstractEntity
@@ -32,7 +32,7 @@ namespace BaseAPI
 
         protected JwtSecurityToken getToken()
         {
-            return new JwtSecurityTokenHandler().ReadJwtToken(((string) httpContext.HttpContext.Request.Headers["authorization"]).Split(" ")[1]);
+            return new JwtSecurityTokenHandler().ReadJwtToken(((string) httpContext.HttpContext?.Request.Headers["authorization"])?.Split(" ")[1]);
         }
 
         /**
